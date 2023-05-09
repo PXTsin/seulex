@@ -28,7 +28,7 @@ struct Node_closure{
     Node *head,*tail;
     Node_closure(Node *h,Node *t):head(h),tail(t){}
 };
-Node_closure* lex_2(string lex){
+Node_closure* lex_2_NFA(string lex){
     map<char,int> priority;
     int len=lex.length();
     stack<char> op;
@@ -194,73 +194,6 @@ void split(const string& s,vector<string>& sv,const char flag = ' ') {
     }
     return;
 }
-Node* build_NFA(vector<pair<string,int>> vec,string action){
-    if(vec.empty()){
-        return nullptr;
-    }
-    int len=vec.size();
-    Node *head=new Node("");
-    Node *p=head;
-    Node *prev;
-    for(int i=0;i<len;++i){
-        //建立表示空的节点
-        Node *emp=new Node("");
-
-        vector<string> str_vec;
-        vector<Node*> node_vec;
-        split(vec[i].first,str_vec,'|');
-        for(auto str:str_vec){
-            node_vec.emplace_back(new Node(str));
-            node_vec.back()->next.push_back(emp);
-        }
-
-        //连接上一个状态与当前状态
-        if(i>0){
-            p=prev;
-        }
-        switch (vec[i].second) {
-            case 0:{
-                for(auto &ttt:node_vec){
-                    p->next.push_back(ttt);
-                }
-                break;
-            }
-            case 1:{// ? 0或1次
-                for(auto &ttt:node_vec){
-                    p->next.push_back(ttt);
-                }
-
-                p->next.push_back(new Node(""));
-                break;
-            }
-            case 2:{// + 1或多次
-                for(auto &ttt:node_vec){
-                    p->next.push_back(ttt);
-                }
-                emp->next.push_back(p);
-                break;
-            }
-            case 3:{// 0、1或多次
-                p->next.push_back(new Node(""));
-                for(auto &ttt:node_vec){
-                    p->next.push_back(ttt);
-                }
-                emp->next.push_back(p);
-            }
-            default:{
-                for(auto &ttt:node_vec){
-                    p->next.push_back(ttt);
-                }
-                break;
-            }
-        }
-        prev=emp;
-    }
-    Node *tail=new Node("");
-    tail->is_end_state=true;
-    prev->next.push_back(tail);
-    return head;
-}
 Node* union_NFA(vector<Node*> vec){
     Node *start=new Node("");
     for(auto &e:vec){
@@ -411,7 +344,7 @@ void my_print(Node *p,int n){
 }
 int main(){
     string str="abc[1-3]+";
-    Node *p=lex_2(str)->head;
+    Node *p=lex_2_NFA(str)->head;
     //my_print(p,0);
     NFA_2_DFA(p);
     return 0;
