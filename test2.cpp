@@ -19,117 +19,171 @@ struct Node {
     string label;  // 节点标签标识
     bool is_end_state=false;
     vector<Node*> next;  // 转移状态
-    Node(){
-
-    }
     Node(string label) : label(label) {
         id=++node_id;
         node_map[id]=this;
     }
 };
-
-/* 1.Lex RE=> state */
-vector<pair<string,int>> lex_2_normal(const string lex){
-    vector<pair<string,int>> temp;//RE对应的状态
+struct Node_closure{
+    Node *head,*tail;
+    Node_closure(Node *h,Node *t):head(h),tail(t){}
+};
+Node_closure* lex_2(string lex){
+    map<char,int> priority;
     int len=lex.length();
-    int mid_num=0;// [ 减去 ] 的数量
-    int small_num=0;//( 减去 ) 的数量
-    string str="";
+    stack<char> op;
+    stack<Node_closure*> op_num;
+    // - |  ( ) [ ] * +  ?
+    // - | 双目运算符
+    //* + ? 单目运算符直接算
     for(int i=0;i<len;++i){
-        // 注意 '\\' 代表 '\' !
-        if(lex[i]=='\\'&&i+1<len){
-            switch (lex[++i]) {
-                case '\\':{
-                    str+="\\|";
-                    break;
-                }
-                case 'd':{// '\d'等价于 [0-9]
-                    str+="0|1|2|3|4|5|6|7|8|9";
-                    break;
-                }
-                default:{//其它功能暂不支持,原样返回
-                    if(str.length())
-                        str.push_back('|');
-                    str.push_back(lex[i]);
-                    break;
-                }
+        switch(lex[i]){
+            case '(':{
+                op.push('(');
+                break;
             }
-        }
-        else{
-            switch (lex[i]) {
-                case '[':{
-                    ++mid_num;
-                    str="";
-                    break;
-                }
-                case ']':{
-                    --mid_num;
-                    temp.push_back(pair<string,int>(str,0));
-                    break;
-                }
-                case '-':{//范围匹配
-                    if(i-1>=0&&i+1<len){
-                        char prev=lex[i-1];
-                        char next=lex[++i];
-                        while(prev<next){
-                            //因为之前就入栈了，所以直接从下一个字符开始
-                            ++prev;
-                            str.push_back('|');
-                            str.push_back(prev);
+            case ')':{
+                char oper=op.top();op.pop();
+                if(oper!='('){
+                    switch(oper){
+                        case '|':{
+                            Node_closure *t1=op_num.top();op_num.pop();
+                            Node_closure *t2=op_num.top();op_num.pop();
+                            Node *head(new Node("")),*tail(new Node(""));
+                            head->next.push_back(t1->head);
+                            head->next.push_back(t2->head);
+                            t1->tail->next.push_back(tail);
+                            t2->tail->next.push_back(tail);
+                            op_num.push(new Node_closure(head,tail));
+                            break;
+                        }
+                        case '-':{
+                            Node_closure *t1=op_num.top();op_num.pop();
+                            Node_closure *t2=op_num.top();op_num.pop();
+                            Node *head(new Node("")),*tail(new Node(""));
+                            char c2=t1->tail->label[0];
+                            char c1=t2->tail->label[0];
+                            while(c1<=c2){
+                                string str;str=c1;
+                                Node *t_head=new Node(str);
+                                Node *t_tail=new Node("");
+                                t_tail->next.push_back(t_head);
+                                head->next.push_back(t_tail);
+                                t_head->next.push_back(tail);
+                                ++c1;
+                            }
+                            op_num.push(new Node_closure(head,tail));
                         }
                     }
-                    break;
+                    oper=op.top();op.pop();//弹出'('
                 }
-                case '|':{
-                    break;
-                }
-                case '(':{
-
-                    break;
-                }
-                case ')':{
-
-                    break;
-                }
-                    //? + * .
-                case '?':{// 1
-                    temp.back().second=1;
-                    break;
-                }
-                case '+':{// 2
-                    temp.back().second=2;
-                    break;
-                }
-                case '*':{// 3
-                    temp.back().second=3;
-                    break;
-                }
-                case '.':{// 4
-                    temp.back().second=4;
-                    break;
-                }
-                default:{
-                    if(mid_num>0){
-                        if(str.length())
-                            str.push_back('|');
-                        str.push_back(lex[i]);
-                    }else{
-                        str="";
-                        str.push_back(lex[i]);
-                        temp.push_back(pair<string,int>(str,0));
-                        str="";
+                break;
+            }
+            case '[':{
+                op_num.push(new Node_closure(nullptr,new Node("")));//前空表示'['
+                op.push('[');
+                break;
+            }
+            case ']':{
+                char oper=op.top();op.pop();
+                vector<Node_closure*> vec_temp;
+                while(oper!='['){
+                    switch(oper){
+                        case '-':{
+                            Node_closure *t1=op_num.top();op_num.pop();
+                            Node_closure *t2=op_num.top();op_num.pop();
+                            Node *head(new Node("")),*tail(new Node(""));
+                            char c2=t1->tail->label[0];
+                            char c1=t2->tail->label[0];
+                            while(c1<=c2){
+                                string str;str=c1;
+                                Node *t_head=new Node(str);
+                                Node *t_tail=new Node("");
+                                t_tail->next.push_back(t_head);
+                                head->next.push_back(t_tail);
+                                t_head->next.push_back(tail);
+                                ++c1;
+                            }
+                            vec_temp.push_back(new Node_closure(head,tail));
+                            break;
+                        }
+                        default:break;
                     }
-                    break;
+                    oper=op.top();op.pop();//弹出'['
                 }
-                /*case '(' ')' '{' '}'*/
+                Node_closure *temp=op_num.top();op_num.pop();
+                while (temp->head!=nullptr)//遇到op_num里的'['则停止循环
+                {
+                    vec_temp.push_back(temp);
+                    temp=op_num.top();op_num.pop();
+                }
+                Node *head(new Node("")),*tail(new Node(""));
+                for(auto &e:vec_temp){
+                    head->next.push_back(e->head);
+                    e->tail->next.push_back(tail);
+                }
+                op_num.push(new Node_closure(head,tail));
+                break;
+            }
+            case '-':{
+                op.push('-');
+                break;
+            }
+            case '|':{
+                op.push('|');
+                break;
+            }
+            case '*':{
+                Node *head=new Node("");
+                Node *tail=new Node("");
+                head->next.push_back(tail);
+                tail->next.push_back(head);
+                Node_closure *temp=op_num.top();op_num.pop();
+                head->next.push_back(temp->head);
+                temp->tail->next.push_back(tail);
+                op_num.push(new Node_closure(head,tail));
+                break;
+            }
+            case '?':{
+                Node *head=new Node("");
+                Node *tail=new Node("");
+                head->next.push_back(tail);
+                Node_closure *temp=op_num.top();op_num.pop();
+                head->next.push_back(temp->head);
+                temp->tail->next.push_back(tail);
+                op_num.push(new Node_closure(head,tail));
+                break;
+            }
+            case '+':{
+                Node *head=new Node("");
+                Node *tail=new Node("");
+                tail->next.push_back(head);
+                Node_closure *temp=op_num.top();op_num.pop();
+                head->next.push_back(temp->head);
+                temp->tail->next.push_back(tail);
+                op_num.push(new Node_closure(head,tail));
+                break;
+            }
+            default:{
+                Node *head=new Node("");
+                string str;
+                str=lex[i];
+                Node *tail=new Node(str);
+                head->next.push_back(tail);
+                op_num.push(new Node_closure(head,tail));
+                break;
             }
         }
     }
-    for(auto &e:temp){
-        cout<<e.first<<"\ttype:"<<e.second<<endl;
+    while(op_num.size()>1){
+        Node_closure *n1=op_num.top();op_num.pop();//tail
+        Node_closure *n2=op_num.top();op_num.pop();//head
+        n2->tail->next.push_back(n1->head);
+        op_num.push(new Node_closure(n2->head,n1->tail));
     }
-    return temp;
+    return op_num.top();
 }
+
 void split(const string& s,vector<string>& sv,const char flag = ' ') {
     sv.clear();
     istringstream iss(s);
@@ -331,6 +385,8 @@ vector<vector<int>> NFA_2_DFA(Node* root){
     }
     return ans;
 }
+
+
 void my_print(Node *p,int n){
     string str="";
     for(int i=0;i<n;++i){
@@ -342,7 +398,7 @@ void my_print(Node *p,int n){
         cout<<str<<"condition:"<<p->label<<endl;
         cout<<str<<"next:{"<<endl;
         for(auto &e:p->next){
-            if(p->label == e->label){
+            if(p->label == e->label&&p->label!=""){
                 cout<<str+"    "<<"state:"<<e->id<<endl; 
                 cout<<str+"    "<<"condition:"<<e->label<<endl;
                 cout<<str+"    "<<"next:{loop!}"<<endl;
@@ -354,14 +410,9 @@ void my_print(Node *p,int n){
     }
 }
 int main(){
-    string str="a[1-3]+";
-    Node *p= build_NFA(lex_2_normal(str),"id");
-    my_print(p,0);
+    string str="abc[1-3]+";
+    Node *p=lex_2(str)->head;
+    //my_print(p,0);
     NFA_2_DFA(p);
-    //move(node_map[2],'1');
-    // auto a=move(node_map[1],"a");
-    // for(auto e:a){1
-    //     cout<<"转移条件:"<<e->label<<"\tid:"<<e->id<<endl;
-    // }
     return 0;
 }
