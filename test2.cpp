@@ -1,4 +1,4 @@
-/*将正则表达式转化为NFA*/
+/*将正则表达式转化为NFA，再转为DFA*/
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -12,11 +12,13 @@ using namespace std;
 
 static int node_id=0;
 struct Node;
-static map<int,Node*> node_map;
+static map<int,Node*> node_map;//方便debug
+map<int,string> state_action;//map<int,string> state_action 接收状态对应的动作
 // NFA 节点结构体
 struct Node {
     int id;
-    string label;  // 节点标签标识
+    string label;  // 到达该状态的条件
+    string action=""; //该状态为接收状态时对应的动作
     bool is_end_state=false;
     vector<Node*> next;  // 转移状态
     Node(string label) : label(label) {
@@ -28,7 +30,7 @@ struct Node_closure{
     Node *head,*tail;
     Node_closure(Node *h,Node *t):head(h),tail(t){}
 };
-Node_closure* lex_2_NFA(string lex){
+Node_closure* lex_2_NFA(string lex,string action){
     map<char,int> priority;
     int len=lex.length();
     stack<char> op;
@@ -181,6 +183,8 @@ Node_closure* lex_2_NFA(string lex){
         n2->tail->next.push_back(n1->head);
         op_num.push(new Node_closure(n2->head,n1->tail));
     }
+    op_num.top()->tail->is_end_state=true;
+    op_num.top()->tail->action=action;
     return op_num.top();
 }
 
@@ -263,11 +267,12 @@ vector<Node*> move(vector<Node*> T,char a){
     }
     return ans;
 }
+
+
 vector<vector<int>> NFA_2_DFA(Node* root){
     vector<vector<int>> vec(128,vector<int>(127,0));
     map<vector<Node*>,int> my_map;
     vector<Node*> temp=closure_ε(root);
-    set<int> end_state;//结束状态集合
     int id=0,count=1;
     my_map[temp]=-(++id);
     while(count>0){
@@ -285,7 +290,7 @@ vector<vector<int>> NFA_2_DFA(Node* root){
                         /*--------------*/
                         for(auto &e:tmp){
                             if(e->is_end_state){
-                                end_state.insert(abs(my_map[tmp]));
+                                state_action[abs(my_map[tmp])]=e->action;
                             }
                         }
                         /*--------------*/
@@ -311,10 +316,6 @@ vector<vector<int>> NFA_2_DFA(Node* root){
             if(ans[i][j]!=0)
                 cout<<i<<":-"<<(char)j<<"->"<<ans[i][j]<<endl;
         }
-    }
-    //////////////////////////////////
-    for(auto e:end_state){
-        cout<<e<<endl;
     }
     return ans;
 }
@@ -343,9 +344,14 @@ void my_print(Node *p,int n){
     }
 }
 int main(){
-    string str="abc[1-3]+";
-    Node *p=lex_2_NFA(str)->head;
+    string str="(a|b)c[1-3]+";
+    Node_closure *n_c=lex_2_NFA(str,"test");
+    Node *p=n_c->head;
     //my_print(p,0);
     NFA_2_DFA(p);
+    for(auto e:state_action){
+        cout<<"接收状态"<<e.first<<"对应的动作为:\n"<<e.second<<endl;
+    }
+
     return 0;
 }
