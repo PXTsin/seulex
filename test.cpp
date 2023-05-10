@@ -354,7 +354,7 @@ void my_print(Node *p,int n){
     }
 }
 int main(){
-    string str="a[1-3]+";
+    string str="a[1-3]*";
     Node *p= build_NFA(lex_2_normal(str),"id");
     my_print(p,0);
     NFA_2_DFA(p);

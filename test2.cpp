@@ -7,7 +7,9 @@
 #include <regex>
 #include <map>
 #include <set>
+#include <sstream>
 #include <numeric>
+#include <queue>
 using namespace std;
 
 static int node_id=0;
@@ -30,6 +32,24 @@ struct Node_closure{
     Node *head,*tail;
     Node_closure(Node *h,Node *t):head(h),tail(t){}
 };
+string lex_2_normal(const string lex,map<string,string> &alias){
+    string str=lex;
+    if(str[0]=='"'&&str[str.length()-1]=='"'){//去除双引号
+        str.erase(str.begin()+str.length()-1);
+        str.erase(str.begin());
+    }
+    auto make_string=[](string temp){return "{"+temp+"}";};
+    //替换别名
+    for(auto &e:alias){
+        string tmp=make_string(e.first);
+        int position=str.find(tmp);
+        while(position!=-1){
+            str.replace(position,tmp.length(),e.second);
+            position=str.find(tmp);
+        }
+    }
+    return str;
+}
 Node_closure* lex_2_NFA(string lex,string action){
     map<char,int> priority;
     int len=lex.length();
@@ -139,10 +159,10 @@ Node_closure* lex_2_NFA(string lex,string action){
                 Node *head=new Node("");
                 Node *tail=new Node("");
                 head->next.push_back(tail);
-                tail->next.push_back(head);
                 Node_closure *temp=op_num.top();op_num.pop();
                 head->next.push_back(temp->head);
                 temp->tail->next.push_back(tail);
+                tail->next.push_back(temp->head);
                 op_num.push(new Node_closure(head,tail));
                 break;
             }
@@ -260,7 +280,7 @@ vector<Node*> move(vector<Node*> T,char a){
 
 
 vector<vector<int>> NFA_2_DFA(Node* root){
-    vector<vector<int>> vec(128,vector<int>(127,0));
+    vector<vector<int>> vec(512,vector<int>(127,0));
     map<vector<Node*>,int> my_map;
     vector<Node*> temp=closure_ε(root);
     int id=0,count=1;
@@ -335,25 +355,96 @@ void my_print(Node *p,int n){
 /*定义状态转移矩阵*/
 string string_matrix(vector<vector<int>> ans){
     int ans_size=ans.size();
-    string str="vector<vector<int>> m("+to_string(ans_size)+",vector<int>(127,0));\n";
+    string str="    m=new vector<vector<int>>("+to_string(ans_size)+",vector<int>(127,0));\n";
     for(int i=0;i<ans_size;++i){
         for(int j=0;j<127;++j){
             if(ans[i][j]!=0){
-                str+="m[" + to_string(i) + "][" + to_string(j)+ "]=" + to_string(ans[i][j]) + ";\n";
+                str+="    m[" + to_string(i) + "][" + to_string(j)+ "]=" + to_string(ans[i][j]) + ";\n";
             }
         }
     }
     return str;
 }
-int main(){
-    string str="(a|b)c[1-3]+";
-    Node_closure *n_c=lex_2_NFA(str,"test");
-    Node *p=n_c->head;
-    //my_print(p,0);
-    vector<vector<int>> vec=NFA_2_DFA(p);
-    for(auto e:state_action){
-        cout<<"接收状态"<<e.first<<"对应的动作为:\n"<<e.second<<endl;
+/*定义结束状态以及对应的动作*/
+string string_end_state(map<int,string> state_action){
+    string str="\n";
+    for(auto &e:state_action){
+        str+="    state_action["+to_string(e.first)+"]="+e.second+";\n";
     }
-    cout<<string_matrix(vec)<<endl;
+    return str;
+}
+/*定义switch程序，执行对应的动作*/
+string string_switch_program(map<int,string> action){
+    string str="    auto switch_program=[](int state){\n";
+    for(auto &e:action){
+        str+="\tcase "+to_string(e.first)+" :{\n    \t"+e.second+"\n    \tbreak;\n\t}\n";
+    }
+    str+="\tdefault:return (ERROR);\n    }\n    int ans=switch_program(state);\n    return ans;\n";
+    return str;
+}
+string build_yylex(map<int,string> action){
+    string body="void yylex(){\n\
+    if(buffer.empty()){\n\
+        stringstream ss;\n\
+        string str;\n\
+        ++lineno;\n\
+        fin>>ss;\n\
+        while(ss>>str){\n\
+            buffer.push(str);\n\
+        }\n\
+    }\n\
+    string str=buffer.front();buffer.pop();\n\
+    current=str;\n\
+    int i=0;\n\
+    int state=1;\n\
+        while(state_action.count(state)==0){\n\
+        char k=str[i++];\n\
+        state=m[state][k];\n\
+    }\n"+string_switch_program(action)+"}\n";
+    return body;
+}
+/*定义全局变量*/
+string global_var(){
+    string str="\
+    fstream fin;\n\
+    map<int,string> state_action;\n\
+    vector<vector<int>> m;\n\
+    queue<string> buffer;\n\
+    int lineno=0;\n\
+    int current=0;\n";
+    return str;
+}
+/*定义初始化状态转移矩阵和接收状态集合*/
+string string_init(vector<vector<int>> vec,map<int,string> state){
+    string str="void init(){\n"+string_matrix(vec)+string_end_state(state)+"}";
+    return str;
+}
+void test_lex_2_normal(){
+    map<string,string> alias;
+    alias["D"]="[0-9]";
+    alias["L"]="[_a-zA-Z]";
+    string str="{L}({L}|{D})*";
+    str=lex_2_normal("{L}({L}|{D})*",alias);
+    Node_closure *n_c=lex_2_NFA(str,"test");
+    cout<<str<<endl;
+    vector<vector<int>> vec=NFA_2_DFA(n_c->head);
+}
+int main(){ 
+    //string str="(a|b)c[1-3]+";//[a-zA-Z_]([a-zA-Z_]|[0-9])*  [a-zA-Z_]
+    //string str="[_a-zA-Z]([_a-zA-Z]|[0-9])*";
+    //Node_closure *n_c=lex_2_NFA(str,"test");
+    //Node *p=n_c->head;
+    //my_print(p,0);
+    //vector<vector<int>> vec=NFA_2_DFA(p);
+    //for(auto e:state_action){
+    //    cout<<"接收状态"<<e.first<<"对应的动作为:\n"<<e.second<<endl;
+    //}
+    //cout<<string_matrix(vec)<<endl;
+    //cout<<string_end_state(state_action)<<endl;
+    //cout<<string_switch_program(state_action)<<endl;
+    //cout<<build_yylex(state_action)<<endl;
+    //cout<<string_init(vec,state_action)<<endl;
+
+    test_lex_2_normal();
     return 0;
 }
