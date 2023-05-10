@@ -13,7 +13,7 @@ using namespace std;
 static int node_id=0;
 struct Node;
 static map<int,Node*> node_map;//方便debug
-map<int,string> state_action;//map<int,string> state_action 接收状态对应的动作
+static map<int,string> state_action;//map<int,string> state_action 接收状态对应的动作
 // NFA 节点结构体
 struct Node {
     int id;
@@ -188,16 +188,6 @@ Node_closure* lex_2_NFA(string lex,string action){
     return op_num.top();
 }
 
-void split(const string& s,vector<string>& sv,const char flag = ' ') {
-    sv.clear();
-    istringstream iss(s);
-    string temp;
-
-    while (getline(iss, temp, flag)) {
-        sv.push_back(temp);
-    }
-    return;
-}
 Node* union_NFA(vector<Node*> vec){
     Node *start=new Node("");
     for(auto &e:vec){
@@ -320,7 +310,6 @@ vector<vector<int>> NFA_2_DFA(Node* root){
     return ans;
 }
 
-
 void my_print(Node *p,int n){
     string str="";
     for(int i=0;i<n;++i){
@@ -343,15 +332,28 @@ void my_print(Node *p,int n){
         cout<<str<<"}"<<endl;
     }
 }
+/*定义状态转移矩阵*/
+string string_matrix(vector<vector<int>> ans){
+    int ans_size=ans.size();
+    string str="vector<vector<int>> m("+to_string(ans_size)+",vector<int>(127,0));\n";
+    for(int i=0;i<ans_size;++i){
+        for(int j=0;j<127;++j){
+            if(ans[i][j]!=0){
+                str+="m[" + to_string(i) + "][" + to_string(j)+ "]=" + to_string(ans[i][j]) + ";\n";
+            }
+        }
+    }
+    return str;
+}
 int main(){
     string str="(a|b)c[1-3]+";
     Node_closure *n_c=lex_2_NFA(str,"test");
     Node *p=n_c->head;
     //my_print(p,0);
-    NFA_2_DFA(p);
+    vector<vector<int>> vec=NFA_2_DFA(p);
     for(auto e:state_action){
         cout<<"接收状态"<<e.first<<"对应的动作为:\n"<<e.second<<endl;
     }
-
+    cout<<string_matrix(vec)<<endl;
     return 0;
 }
