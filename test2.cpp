@@ -34,9 +34,13 @@ struct Node_closure{
 };
 string lex_2_normal(const string lex,map<string,string> &alias){
     string str=lex;
-    if(str[0]=='"'&&str[str.length()-1]=='"'){//去除双引号
-        str.erase(str.begin()+str.length()-1);
-        str.erase(str.begin());
+    //去除双引号
+    int posi=str.find('\"');
+    while(posi>=0){
+        if(posi==0||str[posi-1]!='\\'){
+            str.erase(str.begin()+posi);
+        }
+        posi=str.find('\"');
     }
     auto make_string=[](string temp){return "{"+temp+"}";};
     //替换别名
@@ -46,6 +50,34 @@ string lex_2_normal(const string lex,map<string,string> &alias){
         while(position!=-1){
             str.replace(position,tmp.length(),e.second);
             position=str.find(tmp);
+        }
+    }
+    //处理转义字符
+    for(int i=0;i<str.length();++i){
+        // 注意 '\\' 代表 '\' !
+        if(str[i]=='\\'&&i+1<str.length()){
+            switch (str[i+1]) {
+                case '\\':{
+                    str.replace(i,2,"\\");
+                    break;
+                }
+                case 'n':{
+                    str.replace(i,2,"\n");
+                    break;
+                }
+                case 't':{
+                    str.replace(i,2,"\t");
+                    break;
+                }
+                case 'd':{
+                    str.replace(i,2,"[0-9]");
+                    break;
+                }
+                default :{
+                    str.erase(str.begin()+i);
+                    break;
+                }
+            }
         }
     }
     return str;
@@ -279,11 +311,12 @@ vector<Node*> move(vector<Node*> T,char a){
 }
 
 
-vector<vector<int>> NFA_2_DFA(Node* root){
-    vector<vector<int>> vec(512,vector<int>(127,0));
-    map<vector<Node*>,int> my_map;
+vector<vector<short>> NFA_2_DFA(Node* root){
+    int vec_size=512;
+    vector<vector<short>> vec(vec_size,vector<short>(127,0));
+    map<vector<Node*>,short> my_map;
     vector<Node*> temp=closure_ε(root);
-    int id=0,count=1;
+    short id=0,count=1;
     my_map[temp]=-(++id);
     while(count>0){
         for(auto &my_pair:my_map){
@@ -310,13 +343,13 @@ vector<vector<int>> NFA_2_DFA(Node* root){
             }
         }
     }
-    int num=128;
+    int num=vec_size;
     for(auto &tmp:vec){
         int n=accumulate(tmp.begin(),tmp.end(),0);
         if(n==0)
             --num;
     }
-    vector<vector<int>> ans;
+    vector<vector<short>> ans;
     for(int i=0;i<=num;++i){
         ans.push_back(vec[i]);
     }
@@ -353,9 +386,9 @@ void my_print(Node *p,int n){
     }
 }
 /*定义状态转移矩阵*/
-string string_matrix(vector<vector<int>> ans){
+string string_matrix(vector<vector<short>> ans){
     int ans_size=ans.size();
-    string str="    m=new vector<vector<int>>("+to_string(ans_size)+",vector<int>(127,0));\n";
+    string str="    m=new vector<vector<short>>("+to_string(ans_size)+",vector<short>(127,0));\n";
     for(int i=0;i<ans_size;++i){
         for(int j=0;j<127;++j){
             if(ans[i][j]!=0){
@@ -408,14 +441,14 @@ string global_var(){
     string str="\
     fstream fin;\n\
     map<int,string> state_action;\n\
-    vector<vector<int>> m;\n\
+    vector<vector<short>> m;\n\
     queue<string> buffer;\n\
     int lineno=0;\n\
     int current=0;\n";
     return str;
 }
 /*定义初始化状态转移矩阵和接收状态集合*/
-string string_init(vector<vector<int>> vec,map<int,string> state){
+string string_init(vector<vector<short>> vec,map<int,string> state){
     string str="void init(){\n"+string_matrix(vec)+string_end_state(state)+"}";
     return str;
 }
@@ -423,11 +456,10 @@ void test_lex_2_normal(){
     map<string,string> alias;
     alias["D"]="[0-9]";
     alias["L"]="[_a-zA-Z]";
-    string str="{L}({L}|{D})*";
-    str=lex_2_normal("{L}({L}|{D})*",alias);
+    string str=lex_2_normal("\\d",alias);//\"//\"(.*)(\n)?
     Node_closure *n_c=lex_2_NFA(str,"test");
     cout<<str<<endl;
-    vector<vector<int>> vec=NFA_2_DFA(n_c->head);
+    vector<vector<short>> vec=NFA_2_DFA(n_c->head);
 }
 int main(){ 
     //string str="(a|b)c[1-3]+";//[a-zA-Z_]([a-zA-Z_]|[0-9])*  [a-zA-Z_]
@@ -435,7 +467,7 @@ int main(){
     //Node_closure *n_c=lex_2_NFA(str,"test");
     //Node *p=n_c->head;
     //my_print(p,0);
-    //vector<vector<int>> vec=NFA_2_DFA(p);
+    //vector<vector<short>> vec=NFA_2_DFA(p);
     //for(auto e:state_action){
     //    cout<<"接收状态"<<e.first<<"对应的动作为:\n"<<e.second<<endl;
     //}
