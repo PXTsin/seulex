@@ -35,13 +35,13 @@ struct Node_closure{
 string lex_2_normal(const string lex,map<string,string> &alias){
     string str=lex;
     //去除双引号
-    int posi=str.find('\"');
-    while(posi>=0){
-        if(posi==0||str[posi-1]!='\\'){
-            str.erase(str.begin()+posi);
-        }
-        posi=str.find('\"');
-    }
+    // int posi=str.find('\"');
+    // while(posi>=0){
+    //     if(posi==0||str[posi-1]!='\\'){
+    //         str.erase(str.begin()+posi);
+    //     }
+    //     posi=str.find('\"');
+    // }
     auto make_string=[](string temp){return "{"+temp+"}";};
     //替换别名
     for(auto &e:alias){
@@ -413,7 +413,7 @@ string string_keywords(map<string,int> keywords,map<int,string> keywords_action)
     string str="    if(keywords.count(str)){\n\
         switch(keywords[str]){\n";
     for(auto &e:keywords){
-        str+="\t\tcase "+to_string(e.second)+":"+keywords_action[e.second]+";\n";
+        str+="\t\tcase "+to_string(e.second)+":"+keywords_action[e.second]+"\n";
     }
     str+="\t\t}\n\t}";
     return str;
@@ -438,7 +438,7 @@ string build_yylex(map<string,int> keywords,map<int,string> keywords_action){
     int i=0;\n\
     int state=1;\n"
     +string_keywords(keywords,keywords_action)
-    +"\n    while(state_action.count(state)==0){\n\
+    +"\n    while(state_action.count(state)==0&&i<str.length()){\n\
         char k=str[i++];\n\
         state=m[state][k];\n\
     }\n"+"\n"+string_switch_program()+"}\n";
@@ -468,37 +468,24 @@ void test_lex_2_normal(){
     alias["D"]="[0-9]";
     alias["L"]="[_a-zA-Z]";
 
-    string str=lex_2_normal("[a-zA-Z_]",alias);//\"//\"(.*)(\n)?
-    string str2=lex_2_normal("[a-z]",alias);
+    // string str=lex_2_normal("[a-zA-Z_]",alias);//\"//\"(.*)(\n)?
+    // string str2=lex_2_normal("[a-z]",alias);
 
-    Node_closure *n_c1=lex_2_NFA(str,"action1");
-    Node_closure *n_c2=lex_2_NFA(str2,"action2");
-    vector<Node_closure*> vec;
-    vec.push_back(n_c1);
-    vec.push_back(n_c2);
+    // Node_closure *n_c1=lex_2_NFA(str,"action1");
+    // Node_closure *n_c2=lex_2_NFA(str2,"action2");
+    // vector<Node_closure*> vec;
+    // vec.push_back(n_c1);
+    // vec.push_back(n_c2);
 
-    cout<<str<<endl;
-    cout<<str2<<endl;
+    // cout<<str<<endl;
+    // cout<<str2<<endl;
 
-    NFA_2_DFA(union_NFA(vec));
+    // NFA_2_DFA(union_NFA(vec));
+    NFA_2_DFA(lex_2_NFA(lex_2_normal("\\\"[#-~!]*\\\"",alias),"action1")->head);
     //NFA_2_DFA(lex_2_NFA(lex_2_normal("\"[^\"\n]*\"",alias),"action1")->head);
 }
-// int main(){ 
-//     //string str="(a|b)c[1-3]+";//[a-zA-Z_]([a-zA-Z_]|[0-9])*  [a-zA-Z_]
-//     //string str="[_a-zA-Z]([_a-zA-Z]|[0-9])*";
-//     //Node_closure *n_c=lex_2_NFA(str,"test");
-//     //Node *p=n_c->head;
-//     //my_print(p,0);
-//     //vector<vector<short>> vec=NFA_2_DFA(p);
-//     //for(auto e:state_action){
-//     //    cout<<"接收状态"<<e.first<<"对应的动作为:\n"<<e.second<<endl;
-//     //}
-//     //cout<<string_matrix(vec)<<endl;
-//     //cout<<string_end_state(state_action)<<endl;
-//     //cout<<string_switch_program(state_action)<<endl;
-//     //cout<<build_yylex(state_action)<<endl;
-//     //cout<<string_init(vec,state_action)<<endl;
-
+// int main(){
 //     test_lex_2_normal();
 //     return 0;
 // }
+

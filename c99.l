@@ -199,6 +199,7 @@ string TokenName[0x5a] = {
 %}
 
 %%
+\"[!#-~]*\" { return (STRING_LITERAL); }
 "//"(.*)(\n)?  { return(COMMENT); }
 {L}         { return(IDENTIFIER); }
 {L}({L}|{D})*		{ return(IDENTIFIER); }
@@ -305,7 +306,7 @@ int main(int argc,char *argv[]){
 	//////////
     int c=0;
 	while((c=yylex())!=0){
-        cout<<current<<":"<<c<<endl;
+        cout<<"< "<<lineno<<"\t"<<current<<"\t"<<TokenName[c]<<" >\n";
     }
     ////////////
     fin.close();
