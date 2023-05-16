@@ -195,7 +195,15 @@ string TokenName[0x5a] = {
     "UNMATCH",
     "COMMENT"
 };
-
+void init();
+int yylex();
+fstream fin;
+map<string,int> keywords;
+map<int,string> state_action;
+vector<vector<short>> m;
+queue<string> buffer;
+int lineno=0;
+string current;
 %}
 
 %%

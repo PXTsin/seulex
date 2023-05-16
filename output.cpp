@@ -192,7 +192,6 @@ string TokenName[0x5a] = {
     "UNMATCH",
     "COMMENT"
 };
-
 void init();
 int yylex();
 fstream fin;

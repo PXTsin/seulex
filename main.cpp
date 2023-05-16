@@ -25,7 +25,6 @@ int main(int argc,char* args[]) {
     s1_alias(alias);
     //////////
     s2_output(ofs);
-    ofs<<global_var();
     s4_output(ofs);
     /////////
     parser_rules(regex_rules);

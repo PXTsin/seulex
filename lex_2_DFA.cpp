@@ -444,19 +444,19 @@ string build_yylex(map<string,int> keywords,map<int,string> keywords_action){
     }\n"+"\n"+string_switch_program()+"}\n";
     return body;
 }
-/*定义全局变量*/
-string global_var(){
-    string str="void init();\n\
-int yylex();\n\
-fstream fin;\n\
-map<string,int> keywords;\n\
-map<int,string> state_action;\n\
-vector<vector<short>> m;\n\
-queue<string> buffer;\n\
-int lineno=0;\n\
-string current;\n";
-    return str;
-}
+// /*定义全局变量*/
+// string global_var(){
+//     string str="void init();\n\
+// int yylex();\n\
+// fstream fin;\n\
+// map<string,int> keywords;\n\
+// map<int,string> state_action;\n\
+// vector<vector<short>> m;\n\
+// queue<string> buffer;\n\
+// int lineno=0;\n\
+// string current;\n";
+//     return str;
+// }
 /*定义初始化状态转移矩阵和接收状态集合*/
 string string_init(vector<vector<short>> vec,map<string,int> keywords){
     //string str="void init(){\n"+string_matrix(vec)+string_end_state()+"}";
