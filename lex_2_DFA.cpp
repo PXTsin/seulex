@@ -420,10 +420,12 @@ string string_keywords(map<string,int> keywords,map<int,string> keywords_action)
 }
 string build_yylex(map<string,int> keywords,map<int,string> keywords_action){
     string body="int yylex(){\n\
+    ++colno;\n\
     if(buffer.empty()){\n\
         stringstream ss;\n\
         string str;\n\
         ++lineno;\n\
+        colno=1;\n\
         getline(fin,str);\n\
         ss<<str;\n\
         while(ss>>str){\n\

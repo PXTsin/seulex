@@ -13,12 +13,12 @@ map<string,int> keywords;//关键字
 map<int,string> keywords_action;//关键字对应的动作
 int keyword_id=0;
 //args[1]为文件路径,args[2]为生成的词法分析程序的路径
-int main(int argc,char* args[]) {
+int main() {
 
     ifstream file;
-    file.open("c99.l",ios::in);
+    file.open("c992.l",ios::in);
     ofstream ofs;
-    ofs.open("output.cpp",ios::out);
+    ofs.open("output2.cpp",ios::out);
 
     assert(file.is_open());
     paser(move(read(file)));

@@ -218,7 +218,7 @@ int main(int argc,char *argv[]){
 	//////////
     int c=0;
 	while((c=yylex())!=0){
-        cout<<"< "<<lineno<<"\t"<<current<<"\t"<<TokenName[c]<<" >\n";
+        cout<<lineno<<"\t"<<current<<"\t"<<TokenName[c]<<"\x06\n";
     }
     ////////////
     fin.close();
