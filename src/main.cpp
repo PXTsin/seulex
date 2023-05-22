@@ -16,9 +16,9 @@ int keyword_id=0;
 int main() {
 
     ifstream file;
-    file.open("c992.l",ios::in);
+    file.open("../rule/c992.l",ios::in);
     ofstream ofs;
-    ofs.open("output2.cpp",ios::out);
+    ofs.open("../output2.cpp",ios::out);
 
     assert(file.is_open());
     paser(move(read(file)));

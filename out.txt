@@ -1,14 +1,14 @@
-1	int	INT
-1	main	IDENTIFIER
-1	(	LPAREN
-1	)	RPAREN
-2	{	LBRACE
-3	printf	IDENTIFIER
-3	(	LPAREN
-3	"helloworld!"	STRING_LITERAL
-3	)	RPAREN
-3	;	SEMICOLON
-4	return	RETURN
-4	0	CONSTANT
-4	;	SEMICOLON
-5	}	RBRACE
+335 < 1 , 1 > int
+300 < 1 , 2 > main
+40 < 1 , 3 > (
+41 < 1 , 4 > )
+123 < 2 , 1 > {
+300 < 3 , 1 > printf
+40 < 3 , 2 > (
+302 < 3 , 3 > "helloworld!"
+41 < 3 , 4 > )
+59 < 3 , 5 > ;
+362 < 4 , 1 > return
+301 < 4 , 2 > 0
+59 < 4 , 3 > ;
+125 < 5 , 1 > }
